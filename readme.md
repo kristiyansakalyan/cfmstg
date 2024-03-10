@@ -1,11 +1,25 @@
 
 
-## DiffSTG: Probabilistic Spatio-Temporal Graph Forecasting  with Denoising Diffusion Models
+## (SIGSPATIAL 2023) DiffSTG: Probabilistic Spatio-Temporal Graph Forecasting with Denoising Diffusion Models
 
-### Model Architecture
+This code is a PyTorch implementation of our SIGSPATIAL'23 paper "DiffSTG: Probabilistic Spatio-Temporal Graph Forecasting with Denoising Diffusion Models". [[arXiv]](https://arxiv.org/abs/2301.13629)
+
+## Citing DiffSTG
+🌟 If you find this resource helpful, please consider to star this repository and cite our research:
+```shell
+@inproceedings{wen2023diffstg,
+  title={{DiffSTG}: Probabilistic spatio-temporal graph forecasting with denoising diffusion models},
+  author={Wen, Haomin and Lin, Youfang and Xia, Yutong and Wan, Huaiyu and Wen, Qingsong and Zimmermann, Roger and Liang, Yuxuan},
+  booktitle={the 31st ACM International Conference on Advances in Geographic Information Systems},
+  year={2023}
+}
+```
+
+
+## Model Architecture
 ![image](./img/model.png)
 
-### Run
+## Run
 
 1. requirements:
 ```shell
@@ -19,18 +33,7 @@ nni
 python train.py
 ```
 
-## Cite
-If you find this helpful, please cite our paper:
-```shell
-@misc{wen2023diffstg,
-      title={DiffSTG: Probabilistic Spatio-Temporal Graph Forecasting with Denoising Diffusion Models}, 
-      author={Haomin Wen and Youfang Lin and Yutong Xia and Huaiyu Wan and Qingsong Wen and Roger Zimmermann and Yuxuan Liang},
-      year={2023},
-      eprint={2301.13629},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
-}
-```
+
 
 
 ## Further Reading
