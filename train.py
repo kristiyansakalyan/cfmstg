@@ -14,6 +14,8 @@ from utils.common_utils import dir_check, to_device, ws, unfold_dict, dict_merge
 from algorithm.dataset import CleanDataset, TrafficDataset
 from algorithm.diffstg.model import DiffSTG, save2file
 
+from tqdm import tqdm
+
 def setup_seed(seed):
     import random
     torch.manual_seed(seed)
@@ -50,7 +52,7 @@ def get_params():
     parser.add_argument("--is_train", type=bool, default=True) # train or evaluate
     parser.add_argument("--data", type=str, default='PEMS08')
     parser.add_argument("--mask_ratio", type=float, default=0.0) # mask of history data
-    parser.add_argument("--is_test", type=bool, default=True)
+    parser.add_argument("--is_test", default=False, action="store_true")
     parser.add_argument("--nni", type=bool, default=False)
     parser.add_argument("--lr", type=float, default=0.002)
     parser.add_argument("--batch_size", type=int, default=8)
@@ -159,7 +161,9 @@ def evals(model, data_loader, epoch, metric, config, clean_data, mode='Test'):
     model.eval()
 
     samples, targets = [], []
-    for i, batch in enumerate(data_loader):
+    val_iter = tqdm(enumerate(data_loader))
+    for i, batch in val_iter:
+        val_iter.set_description_str(f"Validation {epoch}")
         if i > 0 and config.is_test: break
         time_start = timer()
 
@@ -225,19 +229,22 @@ def evals(model, data_loader, epoch, metric, config, clean_data, mode='Test'):
 
     # log of performance in future prediction
     if metric.best_metrics['epoch'] == epoch:
-        message = f" |[{metric.metrics['mae']:<7.2f}{metric.metrics['rmse']:<7.2f}]"
+        message = f" | MAE = {metric.metrics['mae']:<7.2f}; RMSE = {metric.metrics['rmse']:<7.2f}"
     else:
-        message = f" | {metric.metrics['mae']:<7.2f}{metric.metrics['rmse']:<7.2f}"
-    print(message, end='', flush=False)
-    config.logger.message_buffer += message
+        message = f" | MAE = {metric.metrics['mae']:<7.2f}; RMSE = {metric.metrics['rmse']:<7.2f}"
+    # print(message, end='', flush=False)
+    # config.logger.message_buffer += message
+    print(f"Validation {epoch}{message}")
 
     # log of performance in historical prediction
-    message = f" | {metrics_history.metrics['mae']:<7.2f}{metrics_history.metrics['rmse']:<7.2f}{time_cost:<5.2f}s"
-    print(message, end='\n', flush=False)
-    config.logger.message_buffer += f"{message}\n"
+    message = f" | MAE = {metrics_history.metrics['mae']:<7.2f}; RMSE = {metrics_history.metrics['rmse']:<7.2f}; TIME = {time_cost:<5.2f}s"
+    print(f"Validation {epoch}{message}")
+
+    # print(message, end='\n', flush=False)
+    # config.logger.message_buffer += f"{message}\n"
 
     # write log message buffer
-    config.logger.write_message_buffer()
+    # config.logger.write_message_buffer()
 
     torch.cuda.empty_cache()
     return metric
@@ -251,6 +258,7 @@ def main(params: dict):
     config = default_config(params['data'])
 
     config.is_test = params['is_test']
+    print(f"Config is test: {config.is_test}")
     config.nni = params['nni']
     config.lr = params['lr']
     config.batch_size = params['batch_size']
@@ -280,7 +288,7 @@ def main(params: dict):
     config.trial_name = '+'.join([f"{v}" for k, v in params.items()])
     config.log_path = f"{config.PATH_LOG}/{config.trial_name}.log"
 
-    pprint(config)
+    # pprint(config)
     dir_check(config.log_path)
     config.logger.open(config.log_path, mode="w")
     #log parameters
@@ -326,16 +334,16 @@ def main(params: dict):
 
 
     # log model architecture
-    print(model)
-    config.logger.write(model.__str__())
+    # print(model)
+    # config.logger.write(model.__str__())
 
     # log training process
-    config.logger.write(f'Num_of_parameters:{sum([p.numel() for p in model.parameters()])}\n', is_terminal=True)
-    message = "      |---Train--- |---Val Future-- -|-----Val History----|\n"
-    config.logger.write(message, is_terminal=True)
+    # config.logger.write(f'Num_of_parameters:{sum([p.numel() for p in model.parameters()])}\n', is_terminal=True)
+    # message = "      |---Train--- |---Val Future-- -|-----Val History----|\n"
+    # config.logger.write(message, is_terminal=True)
 
-    message = "Epoch | Loss  Time | MAE     RMSE    |  MAE    RMSE   Time|\n" #f"{'Type':^5}{'Epoch':^5} | {'MAE':^7}{'RMSE':^7}{'MAPE':^7}
-    config.logger.write(message, is_terminal=True)
+    # message = "Epoch | Loss  Time | MAE     RMSE    |  MAE    RMSE   Time|\n" #f"{'Type':^5}{'Epoch':^5} | {'MAE':^7}{'RMSE':^7}{'MAPE':^7}
+    # config.logger.write(message, is_terminal=True)
 
 
     train_start_t = timer()
@@ -346,7 +354,9 @@ def main(params: dict):
 
         n, avg_loss, time_lst = 0, 0, []
         # train diffusion model
-        for i, batch in enumerate(train_loader):
+        train_iter = tqdm(enumerate(train_loader))
+        for i, batch in train_iter:
+            train_iter.set_description_str(f"Training {epoch+1}/{config.epoch}")
             if i > 3 and config.is_test:break
             time_start =  timer()
             future, history, pos_w, pos_d = batch # future:(B, T_p, V, F), history: (B, T_h, V, F)
@@ -376,7 +386,8 @@ def main(params: dict):
 
             time_lst.append((timer() - time_start))
             message = f"{i / len(train_loader) + epoch:6.1f}| {avg_loss:0.3f} {np.sum(time_lst):.1f}s"
-            print('\r' + message, end='', flush=True)
+            # print('\r' + message, end='', flush=True)
+            train_iter.set_postfix_str(f"Loss = {avg_loss:0.3f}; Time = {np.sum(time_lst):.1f}s")
 
         config.logger.message_buffer += message
 
