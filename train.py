@@ -396,15 +396,15 @@ def main(params: dict):
         except:
             pass
 
-        if epoch >= config.start_epoch:
-            evals(model, val_loader, epoch, metrics_val, config, clean_data, mode='Val')
-            scheduler.step(metrics_val.metrics['mae'])
+        # if epoch >= config.start_epoch:
+        #     evals(model, val_loader, epoch, metrics_val, config, clean_data, mode='Val')
+        #     scheduler.step(metrics_val.metrics['mae'])
 
-        if metrics_val.best_metrics['epoch'] == epoch:
-            #print('[save model]>> ', model_path)
-            torch.save(model, model_path)
+        # if metrics_val.best_metrics['epoch'] == epoch:
+        #     #print('[save model]>> ', model_path)
+        #     torch.save(model, model_path)
 
-        if epoch - metrics_val.best_metrics['epoch'] > config.early_stop: break  # Early_stop
+        # if epoch - metrics_val.best_metrics['epoch'] > config.early_stop: break  # Early_stop
 
 
     try:

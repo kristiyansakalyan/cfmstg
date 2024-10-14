@@ -1,0 +1,30 @@
+defaults:
+  - data: pems
+  - task: forecasting
+  - hydra: default
+  # Allow the model to overwrite the settings below
+  - _self_
+  - model: diffstg
+
+seed: ~
+eval_testset: no
+
+wandb:
+  id: ~
+  entity: ~
+  project: lab
+  group: explore
+  mode: ~
+  name: ~
+
+hydra:
+  job:
+    name: ${wandb.group}
+
+trainer:
+  accelerator: gpu
+  devices: 1
+  max_epochs: 10
+  log_every_n_steps: 10
+
+early_stopping: 10~
