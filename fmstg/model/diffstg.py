@@ -1,12 +1,12 @@
 """This module implements the DiffSTG model."""
 
-import easydict
+from omegaconf import DictConfig
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from fmstg.model.submodels.ugnet import UGnet
-from utils.common_utils import gather
+from fmstg.utils.common import gather
 
 
 class DiffSTG(nn.Module):
@@ -18,7 +18,7 @@ class DiffSTG(nn.Module):
 
     Attributes
     ----------
-    config : easydict.EasyDict
+    config : DictConfig
         The configuration object containing model hyperparameters.
     N : int
         Number of steps in the forward diffusion process.
@@ -46,7 +46,7 @@ class DiffSTG(nn.Module):
         Variance values for the diffusion process.
     """
 
-    def __init__(self: "DiffSTG", config: easydict.EasyDict) -> None:
+    def __init__(self: "DiffSTG", config: DictConfig) -> None:
         """
         Initializes the DiffSTG model with the given configuration.
 
