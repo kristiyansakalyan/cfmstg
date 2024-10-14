@@ -1,11 +1,12 @@
 """Graph Data Processing Utilities"""
 
 import pickle
+from typing import Any, Optional
+
 import numpy as np
+import numpy.typing as npt
 import scipy.sparse as sp
 from scipy.sparse import linalg
-from typing import Optional, Any
-import numpy.typing as npt
 
 
 def calculate_normalized_laplacian(adj: npt.NDArray[np.float64]) -> sp.coo_matrix:

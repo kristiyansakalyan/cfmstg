@@ -1,11 +1,13 @@
 """Torch Dataset Implementation"""
 
-from typing import Literal
 from dataclasses import dataclass
+from typing import Literal
+
 import numpy as np
 import numpy.typing as npt
-from fmstg.data.utils import search_multihop_neighbor, search_recent_data
 from torch.utils.data import Dataset
+
+from fmstg.data.utils import search_multihop_neighbor, search_recent_data
 
 KnownDatasets = Literal["PEMS", "AIR", "Metro"]
 

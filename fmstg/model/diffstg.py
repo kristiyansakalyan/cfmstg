@@ -1,15 +1,17 @@
 """This module implements the DiffSTG model."""
 
-from omegaconf import DictConfig
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from omegaconf import DictConfig
+
 from fmstg.model.submodels.ugnet import UGnet
+from fmstg.task.forecasting import ForecastingModel
 from fmstg.utils.common import gather
 
 
-class DiffSTG(nn.Module):
+class DiffSTG(ForecastingModel):
     """
     Diffusion Spatio-Temporal Graph Model (DiffSTG).
 
@@ -64,6 +66,7 @@ class DiffSTG(nn.Module):
         self.beta_start = config.get("beta_start", 0.0001)
         self.beta_end = config.get("beta_end", 0.02)
         self.beta_schedule = config.beta_schedule
+        self.mask_ratio = config.mask_ratio
 
         # Initialize epsilon model (e.g., UGnet)
         if config.epsilon_theta == "UGnet":
@@ -307,6 +310,35 @@ class DiffSTG(nn.Module):
         xt = self.q_xt_x0(x0, t, eps)
         eps_theta = self.eps_model(xt, t, c)
         return F.mse_loss(eps, eps_theta)
+
+    def loss_lightning(
+        self: "DiffSTG",
+        batch: tuple[torch.Tensor, torch.Tensor, int, int],
+    ) -> torch.Tensor:
+        future, history, pos_w, pos_d = (
+            batch  # future:(B, T_p, V, F), history: (B, T_h, V, F)
+        )
+
+        # get x0
+        x = torch.cat((history, future), dim=1).to(self.device)  #  (B, T, V, F)
+
+        # get x0_masked
+        mask = torch.randint_like(history, low=0, high=100) < int(
+            # mask the history in a ratio with mask_ratio
+            self.mask_ratio
+            * 100
+        )
+        history[mask] = 0
+        x_masked = torch.cat((history, torch.zeros_like(future)), dim=1).to(
+            self.device
+        )  # (B, T, V, F)
+
+        # reshape
+        x = x.transpose(1, 3)  # (B, F, V, T)
+        x_masked = x_masked.transpose(1, 3)  # (B, F, V, T)
+
+        # loss calculate
+        return 10 * self.loss(x, (x_masked, pos_w, pos_d))
 
     def model_file_name(self) -> str:
         """

@@ -1,14 +1,16 @@
 """PyTorch Lightning Data Module Implementation for Traffic Data"""
 from pathlib import Path
+
 import lightning.pytorch as pl
 from omegaconf import DictConfig
-from fmstg.data.dataset import (
-    CleanDatasetConfig,
-    TrafficDatasetConfig,
-    CleanDataset,
-    TrafficDataset,
-)
 from torch.utils.data import DataLoader
+
+from fmstg.data.dataset import (
+    CleanDataset,
+    CleanDatasetConfig,
+    TrafficDataset,
+    TrafficDatasetConfig,
+)
 
 
 class TrafficDataModule(pl.LightningDataModule):

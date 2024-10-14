@@ -3,11 +3,13 @@ This module implements UGNet and various building blocks for spatio-temporal gra
 including temporal convolutional networks (TCN) and spatial blocks for graph convolution operations.
 """
 
-import torch.nn as nn
-import torch
 import math
-import torch.nn.init as init
+
 import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.init as init
+
 from fmstg.utils.graph_prcs import asym_adj
 
 
