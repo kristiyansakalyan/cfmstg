@@ -8,19 +8,17 @@
 
 import faulthandler
 import logging
-import torch
 
 import hydra
 import wandb
 from lightning.pytorch import Trainer
-from lightning.pytorch.callbacks import EarlyStopping, TQDMProgressBar
+from lightning.pytorch.callbacks import EarlyStopping, TQDMProgressBar, ModelCheckpoint
 from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 from omegaconf import DictConfig, OmegaConf
 
 from fmstg.utils.logging import filter_device_available, get_logger, wandb_login, print_config, wandb_clean_config
 from fmstg.utils.exceptions import print_exceptions
-from fmstg.utils.seed import set_seed
 from fmstg.config import instantiate_datamodule, instantiate_model, instantiate_task
 from dotenv import load_dotenv
 
@@ -49,6 +47,7 @@ def get_callbacks(config):
     monitor = {"monitor": "val/top1", "mode": "max"}
     callbacks = [
         TQDMProgressBar(refresh_rate=1),
+        ModelCheckpoint(**config["checkpointing"])
     ]
     if config.early_stopping is not None:
         stopper = EarlyStopping(

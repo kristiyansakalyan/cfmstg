@@ -38,3 +38,11 @@ training_hparams:
     factor: 0.5
     patience: 5
     monitor: val/mse
+
+checkpointing:
+  dirpath: /nfs/homedirs/sakalyan/code/thesis/outputs/checkpoints
+  filename: best_model
+  mode: min
+  monitor: val/mse
+  save_last: True
+  save_top_k: 1
