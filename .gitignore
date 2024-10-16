@@ -1,6 +1,10 @@
 # Output directory
-output
+outputs
+wandb
+multirun
 
+# Env
+.env
 
 # Pictures
 *.png

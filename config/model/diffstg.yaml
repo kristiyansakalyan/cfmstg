@@ -1,4 +1,4 @@
-name: DiffSTG
+name: diffstg
 
 # Dimensions
 T_p: 12
@@ -6,7 +6,7 @@ T_h: 12
 V: ${data.num_vertices}
 F: ${data.num_features}
 week_len: 7
-day_len: ${data.points_per_hour * 24}
+day_len: ${data.points_per_hour} * 24
 d_h: 32
 
 # Diffusion parameters
@@ -27,3 +27,6 @@ supports_len: 2
 
 # Conditioning
 mask_ratio: 0.0
+
+device_name: cuda
+adj_matrix_filepath: ${data.adjacency_matrix_filepath}

@@ -1,12 +1,12 @@
 defaults:
   - submitit_slurm
 
-partition: gpu_all
-qos: students
+partition: gpu_gtx_1080
+qos: default
 gres: gpu:1
 
 cpus_per_task: 4
-mem_gb: 16
+mem_gb: 8
 
 # 48 hours
 timeout_min: 2880

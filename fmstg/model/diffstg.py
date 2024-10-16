@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from omegaconf import DictConfig
 
+from fmstg.data.datamodule import TrafficDataModule
 from fmstg.model.submodels.ugnet import UGnet
 from fmstg.task.forecasting import ForecastingModel
 from fmstg.utils.common import gather
@@ -62,7 +63,7 @@ class DiffSTG(ForecastingModel):
         self.N = config.N  # Number of steps in the forward process
         self.sample_steps = config.sample_steps  # Steps in the sample process
         self.sample_strategy = self.config.sample_strategy  # Sampling strategy
-        self.device = config.device
+        self.device = torch.device(config.device_name)
         self.beta_start = config.get("beta_start", 0.0001)
         self.beta_end = config.get("beta_end", 0.02)
         self.beta_schedule = config.beta_schedule
@@ -310,6 +311,46 @@ class DiffSTG(ForecastingModel):
         xt = self.q_xt_x0(x0, t, eps)
         eps_theta = self.eps_model(xt, t, c)
         return F.mse_loss(eps, eps_theta)
+
+    def eval_lightning(self: "DiffSTG", batch: tuple[torch.Tensor, torch.Tensor, int, int], datamodule: TrafficDataModule) -> tuple[torch.Tensor, torch.Tensor]:
+                # target:(B,T,V,1), history:(B,T,V,1), pos_w: (B,1), pos_d:(B,T,1)
+        future, history, pos_w, pos_d = batch
+
+        # in cpu (B, T, V, F), T =  T_h + T_p
+        x = torch.cat((history, future), dim=1).to(future.device)
+        # (B, T, V, F)
+        x_masked = torch.cat((history, torch.zeros_like(future)), dim=1).to(
+            future.device
+        )
+        # (B, F, V, T)
+        x = x.transpose(1, 3)
+        # (B, F, V, T)
+        x_masked = x_masked.transpose(1, 3)
+
+        n_samples = 1
+        # (B, n_samples, F, V, T)
+        x_hat = self((x_masked, pos_w, pos_d), n_samples)
+
+        # No clue why we do that here.
+        if x_hat.shape[-1] != (self.config.T_h + self.config.T_p):
+            x_hat = x_hat.transpose(2, 4)
+
+        x = datamodule.clean_dataset.reverse_normalization(x)
+        x_hat = datamodule.clean_dataset.reverse_normalization(x_hat)
+        
+        f_x, f_x_hat = (
+            x[:, :, :, -self.config.T_p :],
+            x_hat[:, :, :, :, -self.config.T_p :],
+        )  # future
+
+        # y_true: (B, T_p, V, D)
+        _y_true_ = f_x.transpose(1, 3)
+        # y_pred: (B, n_samples, T_p, V, D)
+        _y_pred_ = f_x_hat.transpose(2, 4)
+        _y_pred_ = torch.clip(_y_pred_, 0, torch.inf)
+
+        return _y_true_, _y_pred_
+
 
     def loss_lightning(
         self: "DiffSTG",

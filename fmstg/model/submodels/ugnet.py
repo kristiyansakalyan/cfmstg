@@ -652,10 +652,10 @@ class UGnet(nn.Module):
         )
 
         # Graph convolution adjacency matrices
-        a1 = asym_adj(config.A)
-        a2 = asym_adj(np.transpose(config.A))
-        self.a1 = torch.from_numpy(a1).to(config.device)
-        self.a2 = torch.from_numpy(a2).to(config.device)
+        a1 = asym_adj(np.load(config.adj_matrix_filepath))
+        a2 = asym_adj(np.transpose(np.load(config.adj_matrix_filepath)))
+        self.a1 = torch.from_numpy(a1).to(torch.device(config.device_name))
+        self.a2 = torch.from_numpy(a2).to(torch.device(config.device_name))
         config.supports_len = 2
 
         # Time Embedding

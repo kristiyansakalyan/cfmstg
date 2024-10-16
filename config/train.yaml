@@ -6,16 +6,13 @@ defaults:
   - _self_
   - model: diffstg
 
-seed: ~
-eval_testset: no
+# seed: ~
+eval_testset: True
 
 wandb:
-  id: ~
-  entity: ~
-  project: lab
-  group: explore
-  mode: ~
-  name: ~
+  project: "Master-Thesis"
+  group: "explore"
+  name: "DiffSTG_Reproduce_Results"
 
 hydra:
   job:
@@ -24,7 +21,20 @@ hydra:
 trainer:
   accelerator: gpu
   devices: 1
-  max_epochs: 10
-  log_every_n_steps: 10
+  max_epochs: 300
+  log_every_n_steps: 1
 
-early_stopping: 10~
+early_stopping: 5
+
+training_hparams:
+  learning_rate: 0.0001
+  weight_decay: 0.00001
+  # Not used yet but will configure it soon
+  optimizer: Adam
+
+  lr_scheduler:
+    name: ReduceLROnPlateau
+    mode: min
+    factor: 0.5
+    patience: 5
+    monitor: val/mse

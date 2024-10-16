@@ -188,20 +188,20 @@ def load_pickle(pickle_file: str) -> Any:
     return pickle_data
 
 
-def calculate_cheb_poly(L: npt.NDArray[np.floa64], Ks: int) -> npt.NDArray[np.floa64]:
+def calculate_cheb_poly(L: npt.NDArray[np.float64], Ks: int) -> npt.NDArray[np.float64]:
     """
     Calculates the Chebyshev polynomials up to order K for the graph Laplacian.
 
     Parameters
     ----------
-    L : npt.NDArray[np.floa64]
+    L : npt.NDArray[np.float64]
         The Laplacian matrix.
     Ks : int
         The order of the Chebyshev polynomials.
 
     Returns
     -------
-    npt.NDArray[np.floa64]
+    npt.NDArray[np.float64]
         The Chebyshev polynomials as a list of matrices.
     """
     n = L.shape[0]
@@ -214,7 +214,7 @@ def calculate_cheb_poly(L: npt.NDArray[np.floa64], Ks: int) -> npt.NDArray[np.fl
     return np.asarray(LL)
 
 
-def sym_adj(adj: npt.NDArray[np.float64]) -> npt.NDArray[np.floa64]:
+def sym_adj(adj: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """
     Symmetrically normalizes an adjacency matrix.
 
@@ -228,7 +228,7 @@ def sym_adj(adj: npt.NDArray[np.float64]) -> npt.NDArray[np.floa64]:
 
     Returns
     -------
-    npt.NDArray[np.floa64]
+    npt.NDArray[np.float64]
         The symmetrically normalized adjacency matrix.
     """
     adj = sp.coo_matrix(adj)
@@ -247,7 +247,7 @@ def sym_adj(adj: npt.NDArray[np.float64]) -> npt.NDArray[np.floa64]:
     )
 
 
-def asym_adj(adj: npt.NDArray[np.float64]) -> npt.NDArray[np.floa64]:
+def asym_adj(adj: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """
     Asymmetrically normalizes an adjacency matrix.
 
@@ -260,7 +260,7 @@ def asym_adj(adj: npt.NDArray[np.float64]) -> npt.NDArray[np.floa64]:
 
     Returns
     -------
-    npt.NDArray[np.floa64]
+    npt.NDArray[np.float64]
         The asymmetrically normalized adjacency matrix.
     """
     adj = sp.coo_matrix(adj)

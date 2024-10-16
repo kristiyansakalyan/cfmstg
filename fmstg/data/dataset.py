@@ -80,7 +80,7 @@ class CleanDataset:
         self.label, self.feature = self.read_data()
 
         # For ST-GCN (Spatio-Temporal Graph Convolutional Networks)
-        if config.model.get("alpha", None) is not None:
+        if (config.alpha is not None) and (config.t_size is not None):
             self.alpha = config.alpha
             self.t_size = config.t_size
             self.spatial_distance = search_multihop_neighbor(self.adj, hops=self.alpha)

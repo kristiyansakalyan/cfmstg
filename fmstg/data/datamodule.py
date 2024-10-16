@@ -58,10 +58,14 @@ class TrafficDataModule(pl.LightningDataModule):
         config : DictConfig
             Configuration object containing paths, indices, and other settings for the data.
         """
+        super().__init__()
         #################### Clean Dataset ####################
         self.data_name = config.data.name
         self.node_features_filepath = Path(config.data.node_features_filepath)
         self.adjacency_matrix_filepath = Path(config.data.adjacency_matrix_filepath)
+
+        # Deal with cluster issues
+        self.prepare_data_per_node = False
 
         # Validate paths
         if not self.node_features_filepath.exists():
