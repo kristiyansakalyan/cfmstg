@@ -243,7 +243,9 @@ class TcnBlock(nn.Module):
         Parameters
         ----------
         x : torch.Tensor
-            Input tensor of shape (batch, c_in, V, T), where V is the number of nodes and T is the number of time steps.
+            Input tensor of shape (batch, c_in, V, T), where
+            - V is the number of nodes
+            - T is the number of time steps.
 
         Returns
         -------

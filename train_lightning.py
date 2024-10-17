@@ -96,7 +96,8 @@ def main(config: DictConfig):
         project=config["wandb"]["project"],
         name=config["wandb"]["name"],
         config=wandb_clean_config(config),
-        log_model="all",
+        # Don't log models to WandB, there is no need for it.
+        log_model="none",
     )
     # log_hyperparameters(logger, config, model)
 
