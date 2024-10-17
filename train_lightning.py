@@ -61,7 +61,7 @@ def get_callbacks(config):
     return callbacks
 
 
-@hydra.main(config_path="config", config_name="train", version_base=None)
+@hydra.main(config_path="config", config_name="train_diffstg_optimal", version_base=None)
 @print_exceptions
 def main(config: DictConfig):
     # rng = set_seed(config)

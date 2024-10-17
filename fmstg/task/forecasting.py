@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
-from omegaconf import DictConfig
 from typing import Any
 
 import lightning.pytorch as pl
 import torch
 import torch.nn as nn
 import torchmetrics as tm
+from omegaconf import DictConfig
+from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 
 from fmstg.data.datamodule import TrafficDataModule
 
@@ -42,7 +43,11 @@ class ForecastingModel(ABC, nn.Module):
 
     @abstractmethod
     def eval_lightning(
-        self, batch: tuple, datamodule: pl.LightningDataModule
+        self,
+        batch: tuple,
+        datamodule: pl.LightningDataModule,
+        sample_steps: int | None = None,
+        sample_strategy: str | None = None,
     ) -> torch.Tensor:
         """
         Abstract method to compute the loss in a PyTorch Lightning training loop.
@@ -53,6 +58,10 @@ class ForecastingModel(ABC, nn.Module):
             The input batch containing the data for training.
         datamodule: pl.LightningDataModule
             The datamodule that can be used to reverse the normalization for evaluation.
+        sample_steps : int | None
+            The number of sample steps to be used.
+        sample_strategy : str | None
+            The sample strategy to be used.
 
         Returns
         -------
@@ -82,17 +91,17 @@ def get_lr_scheduler(
     Returns
     -------
     dict[str, Any] | None
-        _description_
+        Learning scheduler configuration for PyTorch Lightning
 
     Raises
     ------
     ValueError
-        _description_
+        If the learning rate scheduler is not supported.
     """
     lr_scheduler_name = config["training_hparams"]["lr_scheduler"]["name"]
 
     if lr_scheduler_name == "ReduceLROnPlateau":
-        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        lr_scheduler = ReduceLROnPlateau(
             optimizer,
             mode="min",
             factor=config.training_hparams.lr_scheduler.factor,
@@ -104,7 +113,17 @@ def get_lr_scheduler(
             "frequency": 1,
             "monitor": config.training_hparams.lr_scheduler.monitor,
         }
-
+    if lr_scheduler_name == "StepLR":
+        lr_scheduler = StepLR(
+            optimizer,
+            step_size=config.training_hparams.lr_scheduler.step_size,
+            gamma=config.training_hparams.lr_scheduler.gamma,
+        )
+        return {
+            "scheduler": lr_scheduler,
+            "interval": "epoch",
+            "frequency": 1,
+        }
     else:
         raise ValueError(
             f"The provided learning rate scheduler: '{lr_scheduler_name}' is not supported."
@@ -159,7 +178,12 @@ class ForecastingTask(pl.LightningModule):
         batch: tuple[torch.Tensor, torch.Tensor, int, int],
         batch_idx: int,
     ) -> None:
-        _y_true_, _y_pred_ = self.model.eval_lightning(batch, self.datamodule)
+        _y_true_, _y_pred_ = self.model.eval_lightning(
+            batch,
+            self.datamodule,
+            self.config.model.eval.sample_steps,
+            self.config.model.eval.sample_strategy,
+        )
         metrics = self.val_metrics(
             _y_true_.contiguous(), _y_pred_.squeeze(1).contiguous()
         )

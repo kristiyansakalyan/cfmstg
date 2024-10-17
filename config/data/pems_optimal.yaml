@@ -1,0 +1,22 @@
+name: PEMS
+
+# File Paths
+node_features_filepath: /nfs/homedirs/sakalyan/code/thesis/data/dataset/PEMS08/flow.npy
+adjacency_matrix_filepath: /nfs/homedirs/sakalyan/code/thesis/data/dataset/PEMS08/adj.npy
+
+# Splits
+val_start_idx: 10713 # int(17856 * 0.6)
+test_start_idx: 14284 #int(17856 * 0.8)
+
+# Dataset related
+points_per_hour: 12
+num_vertices: 170
+num_features: 1
+
+# Training
+train_batch_size: 32
+train_shuffle: True
+
+# ST-GCN-Related!? Commented out for now
+# alpha: !?
+# t_size: !?

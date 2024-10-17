@@ -312,8 +312,24 @@ class DiffSTG(ForecastingModel):
         eps_theta = self.eps_model(xt, t, c)
         return F.mse_loss(eps, eps_theta)
 
-    def eval_lightning(self: "DiffSTG", batch: tuple[torch.Tensor, torch.Tensor, int, int], datamodule: TrafficDataModule) -> tuple[torch.Tensor, torch.Tensor]:
-                # target:(B,T,V,1), history:(B,T,V,1), pos_w: (B,1), pos_d:(B,T,1)
+    def set_sample_strategy(self: "DiffSTG", sample_strategy: str) -> None:
+        self.sample_strategy = sample_strategy
+
+    def set_ddim_sample_steps(self: "DiffSTG", sample_steps: int) -> None:
+        self.sample_steps = sample_steps
+
+    def eval_lightning(
+        self: "DiffSTG",
+        batch: tuple[torch.Tensor, torch.Tensor, int, int],
+        datamodule: TrafficDataModule,
+        sample_steps: int | None = None,
+        sample_strategy: str | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        if sample_steps is not None and sample_strategy is not None:
+            self.set_ddim_sample_steps(sample_steps)
+            self.set_sample_strategy(sample_strategy)
+
+        # target:(B,T,V,1), history:(B,T,V,1), pos_w: (B,1), pos_d:(B,T,1)
         future, history, pos_w, pos_d = batch
 
         # in cpu (B, T, V, F), T =  T_h + T_p
@@ -337,7 +353,7 @@ class DiffSTG(ForecastingModel):
 
         x = datamodule.clean_dataset.reverse_normalization(x)
         x_hat = datamodule.clean_dataset.reverse_normalization(x_hat)
-        
+
         f_x, f_x_hat = (
             x[:, :, :, -self.config.T_p :],
             x_hat[:, :, :, :, -self.config.T_p :],
@@ -350,7 +366,6 @@ class DiffSTG(ForecastingModel):
         _y_pred_ = torch.clip(_y_pred_, 0, torch.inf)
 
         return _y_true_, _y_pred_
-
 
     def loss_lightning(
         self: "DiffSTG",
@@ -460,13 +475,13 @@ def generalized_steps(
             xt = xs[-1].to(x.device)
             et = model(xt, t, c)
             x0_t = (xt - et * (1 - at).sqrt()) / at.sqrt()
-            x0_preds.append(x0_t.to("cpu"))
+            x0_preds.append(x0_t)
             c1 = (
                 kwargs.get("eta", 0)
                 * ((1 - at / at_next) * (1 - at_next) / (1 - at)).sqrt()
             )
             c2 = ((1 - at_next) - c1**2).sqrt()
             xt_next = at_next.sqrt() * x0_t + c1 * torch.randn_like(x) + c2 * et
-            xs.append(xt_next.to("cpu"))
+            xs.append(xt_next)
 
     return xs, x0_preds

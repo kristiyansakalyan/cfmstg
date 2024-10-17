@@ -1,0 +1,36 @@
+name: diffstg
+
+# Dimensions
+T_p: 12
+T_h: 12
+V: ${data.num_vertices}
+F: ${data.num_features}
+week_len: 7
+day_len: ${data.points_per_hour} * 24
+d_h: 32
+
+# Diffusion parameters
+N: 200
+sample_steps: 200
+epsilon_theta: 'UGnet'
+is_label_condition: True
+beta_end: 0.02
+beta_schedule: 'quad'
+sample_strategy: 'ddpm'
+
+# How many samples at a time
+n_samples: 2
+
+# UGNet parameters
+channel_multipliers: [1, 2]  # The list of channel numbers at each resolution.
+supports_len: 2
+
+# Conditioning
+mask_ratio: 0.0
+
+device_name: cuda
+adj_matrix_filepath: ${data.adjacency_matrix_filepath}
+
+eval:
+  sample_steps: 40
+  sample_strategy: ddim_multi
