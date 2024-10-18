@@ -150,7 +150,7 @@ class ForecastingTask(pl.LightningModule):
         self.model = model
         self.datamodule = datamodule
         self.config = config
-        # TODO: RMSE? CRPS?
+        # TODO: CRPS?
         # TODO: How can I also measure the time for train, val, test!? TQDM Progress bar?
         metrics = tm.MetricCollection(
             {
@@ -161,11 +161,6 @@ class ForecastingTask(pl.LightningModule):
         )
         self.val_metrics = metrics.clone(prefix="val/")
         self.test_metrics = metrics.clone(prefix="test/")
-
-        # https://github.com/Lightning-AI/lightning/pull/16520.
-        # The new on_validation_epoch_end hook makes us save the outputs
-        # in an attribute instead of having them passed as an argument.
-        self.val_output_list = []
 
     def training_step(
         self: "ForecastingTask",
@@ -195,17 +190,12 @@ class ForecastingTask(pl.LightningModule):
             # self.config.model.eval.sample_steps,
             # self.config.model.eval.sample_strategy,
         )
-        metrics = self.val_metrics(
+        metrics: dict[str, float] = self.val_metrics(
             _y_pred_.squeeze(1).contiguous(), _y_true_.contiguous()
         )
-        # https://github.com/Lightning-AI/lightning/pull/16520.
-        # The new on_validation_epoch_end hook makes us save the outputs
-        # in an attribute instead of having them passed as an argument.
-        # Add output
-        self.val_output_list.append(metrics["val/mae"])
 
-        # Log validation metrics for the current batch
-        self.log_dict(metrics, prog_bar=True, on_step=False, on_epoch=True)
+        # Log validation metrics on epoch end for WandB and learning scheduler.
+        self.log_dict(metrics, prog_bar=True, on_step=False, on_epoch=True, logger=True)
 
         # Return validation MSE for logging and later use by the scheduler
         return {"val/mae": metrics["val/mae"]}
@@ -233,19 +223,7 @@ class ForecastingTask(pl.LightningModule):
         )
 
     def on_validation_epoch_end(self: "ForecastingTask") -> None:
-        # Gather all the validation steps to get the average validation MSE
-        avg_val_mae = torch.stack(self.val_output_list).mean()
-
-        # https://github.com/Lightning-AI/lightning/pull/16520.
-        # The new on_validation_epoch_end hook makes us save the outputs
-        # in an attribute instead of having them passed as an argument.
-        # Reset list
-        self.val_output_list = []
-
-        # Log the averaged validation MSE, which will be used by the scheduler
-        self.log("val/mae", avg_val_mae, on_epoch=True, prog_bar=True, logger=True)
-
-        # Also log learning rate
+        # Log learning rate on epoch end
         lr = self.trainer.optimizers[0].param_groups[0]["lr"]
         self.log("train/learning_rate", lr, on_epoch=True, prog_bar=True, logger=True)
 
@@ -262,15 +240,13 @@ class ForecastingTask(pl.LightningModule):
             self.config.model.eval.sample_strategy,
             mode="test",
         )
-        metrics = self.test_metrics(
+        metrics: dict[str, float] = self.test_metrics(
             _y_pred_.squeeze(1).contiguous(), _y_true_.contiguous()
         )
-        self.log_dict(
-            metrics,
-            prog_bar=True,
-            on_step=True,
-            logger=True,
-        )
+
+        # Log test metrics on epoch end for WandB and learning scheduler.
+        self.log_dict(metrics, prog_bar=True, on_step=False, on_epoch=True, logger=True)
+
 
     def configure_optimizers(
         self: "ForecastingTask",
