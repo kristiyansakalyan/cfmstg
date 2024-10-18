@@ -10,6 +10,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 
 from fmstg.data.datamodule import TrafficDataModule
 from fmstg.utils.common import EvaluationMode
+from fmstg.utils.metrics import RootMeanSquaredError
 
 
 class ForecastingModel(ABC, nn.Module):
@@ -155,6 +156,7 @@ class ForecastingTask(pl.LightningModule):
             {
                 "mae": tm.MeanAbsoluteError(),
                 "mse": tm.MeanSquaredError(),
+                "rmse": RootMeanSquaredError(),
             }
         )
         self.val_metrics = metrics.clone(prefix="val/")
@@ -194,7 +196,7 @@ class ForecastingTask(pl.LightningModule):
             # self.config.model.eval.sample_strategy,
         )
         metrics = self.val_metrics(
-            _y_true_.contiguous(), _y_pred_.squeeze(1).contiguous()
+            _y_pred_.squeeze(1).contiguous(), _y_true_.contiguous()
         )
         # https://github.com/Lightning-AI/lightning/pull/16520.
         # The new on_validation_epoch_end hook makes us save the outputs
@@ -260,8 +262,8 @@ class ForecastingTask(pl.LightningModule):
             self.config.model.eval.sample_strategy,
             mode="test",
         )
-        metrics = self.val_metrics(
-            _y_true_.contiguous(), _y_pred_.squeeze(1).contiguous()
+        metrics = self.test_metrics(
+            _y_pred_.squeeze(1).contiguous(), _y_true_.contiguous()
         )
         self.log_dict(
             metrics,
