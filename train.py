@@ -332,7 +332,7 @@ def main(params: dict):
     print('forecast_path:', forecast_path)
     dir_check(forecast_path)
 
-
+    print(config)
     # log model architecture
     # print(model)
     # config.logger.write(model.__str__())
@@ -463,12 +463,14 @@ if __name__ == '__main__':
 
     logger = logging.getLogger('training')
 
-    print('GPU:', torch.cuda.current_device())
+    # print('GPU:', torch.cuda.current_device())
     try:
         tuner_params = nni.get_next_parameter()
         logger.debug(tuner_params)
         params = vars(get_params())
         params.update(tuner_params)
+
+        print(params)
         main(params)
     except Exception as exception:
         logger.exception(exception)

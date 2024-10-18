@@ -1,10 +1,15 @@
 """Common Utils"""
 
+from typing import Literal
+
 import torch
+
+EvaluationMode = Literal["val", "test"]
+
 
 def gather(consts: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
     """
-    Gathers values from the last dimension of `consts` at the indices specified by `t`, 
+    Gathers values from the last dimension of `consts` at the indices specified by `t`,
     then reshapes the output to a 4D tensor.
 
     Parameters
@@ -21,6 +26,6 @@ def gather(consts: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
     """
     # Gather values from consts at indices t
     c = consts.gather(-1, t)
-    
+
     # Reshape the gathered tensor to shape (-1, 1, 1, 1)
     return c.reshape(-1, 1, 1, 1)

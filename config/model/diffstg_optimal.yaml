@@ -6,7 +6,7 @@ T_h: 12
 V: ${data.num_vertices}
 F: ${data.num_features}
 week_len: 7
-day_len: ${data.points_per_hour} * 24
+day_len: ${eval:'${data.points_per_hour} * 24'}
 d_h: 32
 
 # Diffusion parameters
@@ -14,12 +14,12 @@ N: 200
 sample_steps: 200
 epsilon_theta: 'UGnet'
 is_label_condition: True
-beta_end: 0.02
+beta_end: 0.1
 beta_schedule: 'quad'
 sample_strategy: 'ddpm'
 
 # How many samples at a time
-n_samples: 2
+n_samples: 8
 
 # UGNet parameters
 channel_multipliers: [1, 2]  # The list of channel numbers at each resolution.
@@ -34,3 +34,7 @@ adj_matrix_filepath: ${data.adjacency_matrix_filepath}
 eval:
   sample_steps: 40
   sample_strategy: ddim_multi
+
+# Some extra parameters that I have not seen used but are in the config:
+C: 32
+n_channels: 32

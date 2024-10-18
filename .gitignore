@@ -1,4 +1,5 @@
 # Output directory
+output
 outputs
 wandb
 multirun

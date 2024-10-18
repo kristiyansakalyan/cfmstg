@@ -68,6 +68,7 @@ def main(config: DictConfig):
 
     # Resolve interpolations to work around a bug:
     # https://github.com/omry/omegaconf/issues/862
+    OmegaConf.register_new_resolver("eval", eval)
     OmegaConf.resolve(config)
     # wandb.init(**config.wandb, resume=(config.wandb.mode == "online") and "allow")
     wandb_login()

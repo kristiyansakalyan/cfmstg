@@ -9,8 +9,7 @@ from omegaconf import DictConfig
 from fmstg.data.datamodule import TrafficDataModule
 from fmstg.model.submodels.ugnet import UGnet
 from fmstg.task.forecasting import ForecastingModel
-from fmstg.utils.common import gather
-
+from fmstg.utils.common import gather, EvaluationMode
 
 class DiffSTG(ForecastingModel):
     """
@@ -324,6 +323,7 @@ class DiffSTG(ForecastingModel):
         datamodule: TrafficDataModule,
         sample_steps: int | None = None,
         sample_strategy: str | None = None,
+        mode: EvaluationMode = "val"
     ) -> tuple[torch.Tensor, torch.Tensor]:
         if sample_steps is not None and sample_strategy is not None:
             self.set_ddim_sample_steps(sample_steps)
@@ -343,7 +343,7 @@ class DiffSTG(ForecastingModel):
         # (B, F, V, T)
         x_masked = x_masked.transpose(1, 3)
 
-        n_samples = 1
+        n_samples = 1 if mode == "val" else self.config.n_samples
         # (B, n_samples, F, V, T)
         x_hat = self((x_masked, pos_w, pos_d), n_samples)
 

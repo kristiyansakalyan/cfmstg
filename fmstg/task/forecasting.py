@@ -9,6 +9,7 @@ from omegaconf import DictConfig
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 
 from fmstg.data.datamodule import TrafficDataModule
+from fmstg.utils.common import EvaluationMode
 
 
 class ForecastingModel(ABC, nn.Module):
@@ -48,6 +49,7 @@ class ForecastingModel(ABC, nn.Module):
         datamodule: pl.LightningDataModule,
         sample_steps: int | None = None,
         sample_strategy: str | None = None,
+        mode: EvaluationMode = "val",
     ) -> torch.Tensor:
         """
         Abstract method to compute the loss in a PyTorch Lightning training loop.
@@ -62,6 +64,9 @@ class ForecastingModel(ABC, nn.Module):
             The number of sample steps to be used.
         sample_strategy : str | None
             The sample strategy to be used.
+        mode: EvaluationMode
+            The evaluation mode in which the model has to be evaluated, by default "val".
+            Allows for different implementations in validation and test mode.
 
         Returns
         -------
@@ -124,10 +129,13 @@ def get_lr_scheduler(
             "interval": "epoch",
             "frequency": 1,
         }
-    else:
-        raise ValueError(
-            f"The provided learning rate scheduler: '{lr_scheduler_name}' is not supported."
-        )
+
+    if lr_scheduler_name == "NONE":
+        return None
+
+    raise ValueError(
+        f"The provided learning rate scheduler: '{lr_scheduler_name}' is not supported."
+    )
 
 
 class ForecastingTask(pl.LightningModule):
@@ -181,8 +189,9 @@ class ForecastingTask(pl.LightningModule):
         _y_true_, _y_pred_ = self.model.eval_lightning(
             batch,
             self.datamodule,
-            self.config.model.eval.sample_steps,
-            self.config.model.eval.sample_strategy,
+            # Use normal sampling as they do in train.py
+            # self.config.model.eval.sample_steps,
+            # self.config.model.eval.sample_strategy,
         )
         metrics = self.val_metrics(
             _y_true_.contiguous(), _y_pred_.squeeze(1).contiguous()
@@ -191,13 +200,13 @@ class ForecastingTask(pl.LightningModule):
         # The new on_validation_epoch_end hook makes us save the outputs
         # in an attribute instead of having them passed as an argument.
         # Add output
-        self.val_output_list.append(metrics["val/mse"])
+        self.val_output_list.append(metrics["val/mae"])
 
         # Log validation metrics for the current batch
         self.log_dict(metrics, prog_bar=True, on_step=False, on_epoch=True)
 
         # Return validation MSE for logging and later use by the scheduler
-        return {"val/mse": metrics["val/mse"]}
+        return {"val/mae": metrics["val/mae"]}
 
     def on_before_optimizer_step(
         self: "ForecastingTask", optimizer: torch.optim.Optimizer
@@ -223,7 +232,7 @@ class ForecastingTask(pl.LightningModule):
 
     def on_validation_epoch_end(self: "ForecastingTask") -> None:
         # Gather all the validation steps to get the average validation MSE
-        avg_val_mse = torch.stack(self.val_output_list).mean()
+        avg_val_mae = torch.stack(self.val_output_list).mean()
 
         # https://github.com/Lightning-AI/lightning/pull/16520.
         # The new on_validation_epoch_end hook makes us save the outputs
@@ -232,7 +241,7 @@ class ForecastingTask(pl.LightningModule):
         self.val_output_list = []
 
         # Log the averaged validation MSE, which will be used by the scheduler
-        self.log("val/mse", avg_val_mse, on_epoch=True, prog_bar=True, logger=True)
+        self.log("val/mae", avg_val_mae, on_epoch=True, prog_bar=True, logger=True)
 
         # Also log learning rate
         lr = self.trainer.optimizers[0].param_groups[0]["lr"]
@@ -243,21 +252,36 @@ class ForecastingTask(pl.LightningModule):
         batch: tuple[torch.Tensor, torch.Tensor, int, int],
         batch_idx: int,
     ) -> None:
-        _y_true_, _y_pred_ = self.model.eval_lightning(batch, self.datamodule)
+        _y_true_, _y_pred_ = self.model.eval_lightning(
+            batch,
+            self.datamodule,
+            # Use DDIM with 40 steps as they do in train.py
+            self.config.model.eval.sample_steps,
+            self.config.model.eval.sample_strategy,
+            mode="test",
+        )
+        metrics = self.val_metrics(
+            _y_true_.contiguous(), _y_pred_.squeeze(1).contiguous()
+        )
         self.log_dict(
-            self.test_metrics(_y_true_, _y_pred_),
+            metrics,
             prog_bar=True,
             on_step=True,
             logger=True,
         )
 
-    def configure_optimizers(self: "ForecastingTask") -> torch.optim.Optimizer:
+    def configure_optimizers(
+        self: "ForecastingTask",
+    ) -> dict[str, torch.optim.Optimizer]:
         optimizer = torch.optim.Adam(
             self.model.parameters(),
             lr=self.config.training_hparams.learning_rate,
             weight_decay=self.config.training_hparams.weight_decay,
         )
-        return {
-            "optimizer": optimizer,
-            "lr_scheduler": get_lr_scheduler(self.config, optimizer),
-        }
+        config = {"optimizer": optimizer}
+        lr_scheduler = get_lr_scheduler(self.config, optimizer)
+
+        if lr_scheduler is not None:
+            config["lr_scheduler"] = lr_scheduler
+
+        return config
