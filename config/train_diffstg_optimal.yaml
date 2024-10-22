@@ -8,11 +8,13 @@ defaults:
 
 # seed: ~
 eval_testset: True
+test_only: True
+checkpoint_path: "/nfs/homedirs/sakalyan/code/thesis/outputs/checkpoints/last-v6.ckpt"
 
 wandb:
   project: "Master-Thesis"
   group: "explore"
-  name: "DiffSTG_Optimal_Reproduce_Results"
+  name: "DiffSTG_ddpm_val_Optimal_Eval_200steps_last"
 
 hydra:
   job:

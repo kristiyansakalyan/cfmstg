@@ -104,6 +104,7 @@ def main(config: DictConfig):
 
     log.info("Instantiating trainer")
     callbacks = get_callbacks(config)
+
     trainer = Trainer(
         **config.trainer,
         callbacks=callbacks,
@@ -111,12 +112,13 @@ def main(config: DictConfig):
         plugins=[SLURMEnvironment(auto_requeue=False)],
     )
 
-    log.info("Starting training!")
-    trainer.fit(task, datamodule=datamodule)
+    if not config["test_only"]:    
+        log.info("Starting training!")
+        trainer.fit(task, datamodule=datamodule)
 
     if config.eval_testset:
         log.info("Starting testing!")
-        trainer.test(ckpt_path="best", datamodule=datamodule)
+        trainer.test(task, ckpt_path=config["checkpoint_path"], datamodule=datamodule)
 
     wandb.finish()
     log.info(f"Best checkpoint path:\n{trainer.checkpoint_callback.best_model_path}")

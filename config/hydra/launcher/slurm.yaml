@@ -6,7 +6,7 @@ qos: default
 gres: gpu:1
 
 cpus_per_task: 4
-mem_gb: 8
+mem_gb: 10
 
 # 48 hours
 timeout_min: 2880
