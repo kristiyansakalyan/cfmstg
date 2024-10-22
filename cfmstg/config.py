@@ -1,9 +1,9 @@
 """Configuration file"""
 from omegaconf import DictConfig
 
-from fmstg.data.datamodule import TrafficDataModule
-from fmstg.model.diffstg import DiffSTG
-from fmstg.task.forecasting import ForecastingModel, ForecastingTask
+from cfmstg.data.datamodule import TrafficDataModule
+from cfmstg.model.diffstg import DiffSTG
+from cfmstg.task.forecasting import ForecastingModel, ForecastingTask
 
 
 def instantiate_datamodule(config: DictConfig):

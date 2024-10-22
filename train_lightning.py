@@ -17,9 +17,9 @@ from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.plugins.environments import SLURMEnvironment
 from omegaconf import DictConfig, OmegaConf
 
-from fmstg.utils.logging import filter_device_available, get_logger, wandb_login, print_config, wandb_clean_config
-from fmstg.utils.exceptions import print_exceptions
-from fmstg.config import instantiate_datamodule, instantiate_model, instantiate_task
+from cfmstg.utils.logging import filter_device_available, get_logger, wandb_login, print_config, wandb_clean_config
+from cfmstg.utils.exceptions import print_exceptions
+from cfmstg.config import instantiate_datamodule, instantiate_model, instantiate_task
 from dotenv import load_dotenv
 
 # Load dotenv files
@@ -89,6 +89,8 @@ def main(config: DictConfig):
     # - adj_path = "file/path.npy" => np.load(adj_path)
 
     model = instantiate_model(config.model)
+    
+    print(model)
 
     task = instantiate_task(config, model, datamodule)
 

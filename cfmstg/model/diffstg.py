@@ -6,10 +6,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from omegaconf import DictConfig
 
-from fmstg.data.datamodule import TrafficDataModule
-from fmstg.model.submodels.ugnet import UGnet
-from fmstg.task.forecasting import ForecastingModel
-from fmstg.utils.common import gather, EvaluationMode
+from cfmstg.data.datamodule import TrafficDataModule
+from cfmstg.model.submodels.ugnet import UGnet
+from cfmstg.task.forecasting import ForecastingModel
+from cfmstg.utils.common import gather, EvaluationMode
 
 class DiffSTG(ForecastingModel):
     """

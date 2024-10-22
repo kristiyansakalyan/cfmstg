@@ -7,7 +7,7 @@ import numpy as np
 import numpy.typing as npt
 from torch.utils.data import Dataset
 
-from fmstg.data.utils import search_multihop_neighbor, search_recent_data
+from cfmstg.data.utils import search_multihop_neighbor, search_recent_data
 
 KnownDatasets = Literal["PEMS", "AIR", "Metro"]
 

@@ -5,7 +5,7 @@ import lightning.pytorch as pl
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader
 
-from fmstg.data.dataset import (
+from cfmstg.data.dataset import (
     CleanDataset,
     CleanDatasetConfig,
     TrafficDataset,

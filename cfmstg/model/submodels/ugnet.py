@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 
-from fmstg.utils.graph_prcs import asym_adj
+from cfmstg.utils.graph_prcs import asym_adj
 
 
 class TimeEmbeddingLayer(nn.Module):
@@ -687,7 +687,9 @@ class UGnet(nn.Module):
             The final output tensor after U-Net processing.
         """
         x_masked, _, _ = c
+        print(f"Forward arguments: x: {x.shape}, x_masked: {x_masked.shape}")
         x = torch.cat((x, x_masked), dim=3)  # Concatenate with masked data
+        print(f"Model input: {x.shape}")
         x = self.x_proj(x)
 
         t = self.time_ebedding_layer(t)  # Apply time embedding
@@ -713,4 +715,6 @@ class UGnet(nn.Module):
                 x = m(x, t, supports)
 
         e = self.out(x)
+
+        print(f"Model output: {e.shape}")
         return e

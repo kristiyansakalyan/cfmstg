@@ -8,9 +8,9 @@ import torchmetrics as tm
 from omegaconf import DictConfig
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR
 
-from fmstg.data.datamodule import TrafficDataModule
-from fmstg.utils.common import EvaluationMode
-from fmstg.utils.metrics import RootMeanSquaredError
+from cfmstg.data.datamodule import TrafficDataModule
+from cfmstg.utils.common import EvaluationMode
+from cfmstg.utils.metrics import RootMeanSquaredError
 
 
 class ForecastingModel(ABC, nn.Module):
@@ -189,6 +189,7 @@ class ForecastingTask(pl.LightningModule):
             # Use normal sampling as they do in train.py
             # self.config.model.eval.sample_steps,
             # self.config.model.eval.sample_strategy,
+            mode="val",
         )
         metrics: dict[str, float] = self.val_metrics(
             _y_pred_.squeeze(1).contiguous(), _y_true_.contiguous()
@@ -236,13 +237,24 @@ class ForecastingTask(pl.LightningModule):
             batch,
             self.datamodule,
             # Use DDIM with 40 steps as they do in train.py
-            self.config.model.eval.sample_steps,
-            self.config.model.eval.sample_strategy,
+            # self.config.model.eval.sample_steps,
+            # self.config.model.eval.sample_strategy,
             mode="test",
         )
+
+        # In their metrics they average across the n_samples dimension;
+        # y_true: (B, T_p, V, D)
+        # y_pred: (B, n_samples, T_p, V, D) or (B, T_p, V, D)
+        # y_pred = np.mean(y_pred, axis=1) # # (B, T_p, V, D)
+        if _y_pred_.shape != _y_true_.shape:
+            _y_pred_ = torch.mean(_y_pred_, dim=1)
+
         metrics: dict[str, float] = self.test_metrics(
             _y_pred_.squeeze(1).contiguous(), _y_true_.contiguous()
         )
+        
+        # TODO: Is there a way to somehow attach it to the progressbar?
+        print(metrics)
 
         # Log test metrics on epoch end for WandB and learning scheduler.
         self.log_dict(metrics, prog_bar=True, on_step=False, on_epoch=True, logger=True)
