@@ -1,0 +1,50 @@
+defaults:
+  - data: pems_optimal
+  - task: forecasting
+  - hydra: default
+  # Allow the model to overwrite the settings below
+  - _self_
+  - model: cmfstg
+
+# seed: ~
+eval_testset: True
+test_only: False
+checkpoint_path: "/nfs/homedirs/sakalyan/code/thesis/outputs/checkpoints/last-v6.ckpt"
+
+wandb:
+  project: "Master-Thesis"
+  group: "explore"
+  name: "CMFSTG_Naive"
+
+hydra:
+  job:
+    name: ${wandb.group}
+
+trainer:
+  accelerator: gpu
+  devices: 1
+  max_epochs: 300
+  log_every_n_steps: 1
+
+early_stopping: 10
+
+training_hparams:
+  learning_rate: 0.002
+  weight_decay: 0 # 0.00001 in Config but in train.py they used 0...
+  # Not used yet but will configure it soon
+  optimizer: Adam
+
+  lr_scheduler:
+    name: ReduceLROnPlateau
+    mode: min
+    factor: 0.5
+    patience: 5
+    monitor: val/mae
+
+checkpointing:
+  dirpath: /nfs/homedirs/sakalyan/code/thesis/outputs/checkpoints
+  filename: best_model
+  mode: min
+  monitor: val/mae
+  save_last: True
+  save_top_k: 1

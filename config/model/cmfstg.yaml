@@ -1,0 +1,34 @@
+name: cfmstg
+
+# Dimensions
+T_p: 12
+T_h: 12
+V: ${data.num_vertices}
+F: ${data.num_features}
+week_len: 7
+day_len: ${eval:'${data.points_per_hour} * 24'}
+d_h: 32
+
+# CFM parameters
+N: 200
+sigma_min: 0.0001
+# Model Params
+epsilon_theta: 'UGnet'
+is_label_condition: True
+
+# How many samples at a time
+n_samples: 8
+
+# UGNet parameters
+channel_multipliers: [1, 2]  # The list of channel numbers at each resolution.
+supports_len: 2
+
+# Conditioning
+mask_ratio: 0.0
+
+device_name: cuda
+adj_matrix_filepath: ${data.adjacency_matrix_filepath}
+
+# Some extra parameters that I have not seen used but are in the config:
+C: 32
+n_channels: 32

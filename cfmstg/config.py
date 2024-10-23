@@ -3,6 +3,7 @@ from omegaconf import DictConfig
 
 from cfmstg.data.datamodule import TrafficDataModule
 from cfmstg.model.diffstg import DiffSTG
+from cfmstg.model.cfmstg import CFMSTG
 from cfmstg.task.forecasting import ForecastingModel, ForecastingTask
 
 
@@ -14,6 +15,8 @@ def instantiate_datamodule(config: DictConfig):
 def instantiate_model(config: DictConfig):
     if config.name == "diffstg":
         return DiffSTG(config)
+    if config.name == "cfmstg":
+        return CFMSTG(config)
 
 
 def instantiate_task(

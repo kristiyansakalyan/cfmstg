@@ -61,7 +61,7 @@ def get_callbacks(config):
     return callbacks
 
 
-@hydra.main(config_path="config", config_name="train_diffstg_optimal", version_base=None)
+@hydra.main(config_path="config", config_name="train_cfmstg", version_base=None)
 @print_exceptions
 def main(config: DictConfig):
     # rng = set_seed(config)
@@ -112,6 +112,7 @@ def main(config: DictConfig):
         callbacks=callbacks,
         logger=wandb_logger,
         plugins=[SLURMEnvironment(auto_requeue=False)],
+        num_sanity_val_steps=0
     )
 
     if not config["test_only"]:    
@@ -120,7 +121,7 @@ def main(config: DictConfig):
 
     if config.eval_testset:
         log.info("Starting testing!")
-        trainer.test(task, ckpt_path=config["checkpoint_path"], datamodule=datamodule)
+        trainer.test(task, ckpt_path=config.get("checkpoint_path", None), datamodule=datamodule)
 
     wandb.finish()
     log.info(f"Best checkpoint path:\n{trainer.checkpoint_callback.best_model_path}")

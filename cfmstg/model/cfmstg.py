@@ -25,10 +25,6 @@ class CFMSTG(ForecastingModel):
         self.config = config
         # Number of steps in the forward process
         self.N = config.N
-        # Steps in the sample process
-        self.sample_steps = config.sample_steps
-        # Sampling strategy
-        self.sample_strategy = self.config.sample_strategy
         # Minimum variance
         self.sigma_min = config.sigma_min
         self.device = torch.device(config.device_name)
@@ -39,12 +35,36 @@ class CFMSTG(ForecastingModel):
             self.eps_model = UGnet(config).to(self.device)
 
     def forward(self: "CFMSTG", input: tuple, n_samples: int = 1) -> torch.Tensor:
-        # TODO: Sample loop
-        return self.evaluate(input, n_samples)
+        x_masked, _, _ = input
+        B, F, V, T = x_masked.shape
+        x_masked = (
+            x_masked.unsqueeze(1).repeat(1, n_samples, 1, 1, 1).reshape(-1, F, V, T)
+        )
+        x_1 = self.sample((x_masked, _, _))
+        return x_1.reshape(B, n_samples, F, V, T)
+    
+    def sample(
+        self: "CFMSTG",
+        condition: tuple[torch.Tensor, torch.Tensor, torch.Tensor],
+    ) -> torch.Tensor:
+        x_masked, _, _ = condition
+        B, _, V, T = x_masked.shape
+
+        x_t = torch.randn(
+            [B, self.config.F, V, T], device=self.device
+        )
+        delta_t = 1 / self.N
+
+        for i in range(self.N):
+            t = torch.Tensor([i / self.N]).to(x_t.device).repeat(B)
+            x_t = x_t + delta_t * self.eps_model(x_t, t, condition)
+        
+        return x_t
 
     def phi_t(
         self: "CFMSTG", x_0: torch.Tensor, x_1: torch.Tensor, t: torch.Tensor
     ) -> torch.Tensor:
+        t = t.reshape(-1, 1, 1, 1)
         return (1 - (1 - self.sigma_min) * t) * x_0 + (t * x_1)
 
     def u_t(self: "CFMSTG", x_0: torch.Tensor, x_1: torch.Tensor) -> torch.Tensor:
@@ -52,8 +72,7 @@ class CFMSTG(ForecastingModel):
 
     def loss(self: "CFMSTG", x_1: torch.Tensor, c: tuple) -> torch.Tensor:
         # Sample time step
-        # TODO: This won't work, must be reshaped s.t. it is broadcasted correctly
-        t = torch.rand(1, x_1.shape[0], device=x_1.device)
+        t = torch.rand(1, x_1.shape[0], device=x_1.device).squeeze(0)
         # Sample random noise as initial point
         x_0 = torch.randn_like(x_1)
         # Compute the sample x at time t
@@ -73,11 +92,6 @@ class CFMSTG(ForecastingModel):
         sample_strategy: str | None = None,
         mode: EvaluationMode = "val",
     ) -> tuple[torch.Tensor, torch.Tensor]:
-        # TODO: Eval step
-        if sample_steps is not None and sample_strategy is not None:
-            self.set_ddim_sample_steps(sample_steps)
-            self.set_sample_strategy(sample_strategy)
-
         # target:(B,T,V,1), history:(B,T,V,1), pos_w: (B,1), pos_d:(B,T,1)
         future, history, pos_w, pos_d = batch
 
@@ -120,7 +134,6 @@ class CFMSTG(ForecastingModel):
         self: "CFMSTG",
         batch: tuple[torch.Tensor, torch.Tensor, int, int],
     ) -> torch.Tensor:
-        # TODO: This in theory should work out of the box
         # future: (B, T_p, V, F), history: (B, T_h, V, F)
         future, history, pos_w, pos_d = batch
 
