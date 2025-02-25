@@ -8,13 +8,13 @@ defaults:
 
 # seed: ~
 eval_testset: True
-test_only: False
-checkpoint_path: "/nfs/homedirs/sakalyan/code/thesis/outputs/checkpoints/last-v6.ckpt"
+test_only: True
+checkpoint_path: "/nfs/homedirs/sakalyan/code/thesis/outputs/checkpoints/last-v7.ckpt"
 
 wandb:
   project: "Master-Thesis"
   group: "explore"
-  name: "CMFSTG_Naive"
+  name: "CMFSTG_Naive_Last_Eval"
 
 hydra:
   job:
