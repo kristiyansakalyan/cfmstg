@@ -11,10 +11,11 @@ The backbone used in both approaches is UGNet and the overall worflow looks like
 
 ## Results on the PEMS Dataset:
 
-| Model   | MSE    | MAE   | RMSE  |
-| ------- | ------ | ----- | ----- |
-| CFMSTG  | 740.89 | 26.37 | 17.16 |
-| DiffSTG | 992.16 | 30.44 | 21.27 |
+| Model                    | MAE   | RMSE  |
+| ------------------------ | ----- | ----- |
+| CFMSTG                   | 16.85 | 25.75 |
+| DiffSTG (DDPM 200 Steps) | 17.12 | 25.78 |
+| DiffSTG (DDIM 20 Steps)  | 21.27 | 30.45 |
 
 ## Run
 
